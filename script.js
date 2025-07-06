@@ -3,7 +3,13 @@ const fetchButton = document.getElementById("fetch-button");
 const resultsSection = document.getElementById("results");
 
 let guidelineMap = {}; // maps displayed ID -> full entry
-let sectionTitleCache = {}; // sectionId -> section title
+
+function parseSnapshotDate(input) {
+    if (!input) return null;
+    const [day, month, year] = input.split('/');
+    if (!day || !month || !year) return null;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
 
 async function loadGuidelines() {
     try {
@@ -18,6 +24,7 @@ async function loadGuidelines() {
         guidelineSelect.innerHTML = "";
 
         data
+            .filter(g => !g.name.includes("#DELETE THIS#")) // ⬅️ NEW: filter out deleted
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
             .forEach(g => {
                 const idToUse = g.publishedId || g.guidelineId;
@@ -40,7 +47,8 @@ async function loadGuidelines() {
 
 async function fetchRecommendations() {
     const selectedId = guidelineSelect.value;
-    const date = document.getElementById("date-input").value;
+    const rawDate = document.getElementById("date-input").value;
+    const snapshotDate = parseSnapshotDate(rawDate); // ⬅️ NEW: parse input date
     const guidelineEntry = guidelineMap[selectedId];
 
     const tryIds = [];
@@ -53,7 +61,12 @@ async function fetchRecommendations() {
 
     for (let id of tryIds) {
         try {
-            const res = await fetch(`https://api.magicapp.org/api/v2/guidelines/${id}/recommendations`);
+            let url = `https://api.magicapp.org/api/v2/guidelines/${id}/recommendations`;
+            if (snapshotDate) {
+                url += `?date=${snapshotDate}`; // ⬅️ NEW: attach query param
+            }
+
+            const res = await fetch(url);
             if (res.ok) {
                 recommendations = await res.json();
                 break;
@@ -68,9 +81,7 @@ async function fetchRecommendations() {
         return;
     }
 
-    const filtered = date
-        ? recommendations.filter(r => r.lastUpdated && new Date(r.lastUpdated) <= new Date(date))
-        : recommendations;
+    const filtered = recommendations; // filtering now handled by API using `date=`
 
     if (filtered.length === 0) {
         resultsSection.innerHTML = "<p>No recommendations found for selected date.</p>";
