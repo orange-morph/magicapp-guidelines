@@ -1,0 +1,49 @@
+body {
+    font-family: system-ui, sans-serif;
+    background: #fefefe;
+    margin: 0;
+    padding: 2rem;
+    max-width: 600px;
+    margin: auto;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+h1 {
+    font-size: 1.8rem;
+    color: #2a2a2a;
+}
+
+label {
+    font-weight: bold;
+}
+
+select,
+input[type="date"],
+button {
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+button {
+    background-color: #1d7aaf;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #155b82;
+}
+
+#results {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f4f4f4;
+    border-left: 4px solid #1d7aaf;
+}
