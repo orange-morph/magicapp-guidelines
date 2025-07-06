@@ -8,7 +8,7 @@ function parseSnapshotDate(input) {
     if (!input) return null;
     const [day, month, year] = input.split('/');
     if (!day || !month || !year) return null;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return `${year}-${month.padStart(2, '0')}-${day}`;
 }
 
 async function loadGuidelines() {
@@ -24,7 +24,7 @@ async function loadGuidelines() {
         guidelineSelect.innerHTML = "";
 
         data
-            .filter(g => !g.name.includes("#DELETE THIS#")) // ⬅️ NEW: filter out deleted
+            .filter(g => !g.name.includes("#DELETE THIS#"))
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
             .forEach(g => {
                 const idToUse = g.publishedId || g.guidelineId;
@@ -48,7 +48,7 @@ async function loadGuidelines() {
 async function fetchRecommendations() {
     const selectedId = guidelineSelect.value;
     const rawDate = document.getElementById("date-input").value;
-    const snapshotDate = parseSnapshotDate(rawDate); // ⬅️ NEW: parse input date
+    const snapshotDate = parseSnapshotDate(rawDate);
     const guidelineEntry = guidelineMap[selectedId];
 
     const tryIds = [];
@@ -63,7 +63,7 @@ async function fetchRecommendations() {
         try {
             let url = `https://api.magicapp.org/api/v2/guidelines/${id}/recommendations`;
             if (snapshotDate) {
-                url += `?date=${snapshotDate}`; // ⬅️ NEW: attach query param
+                url += `?date=${snapshotDate}`;
             }
 
             const res = await fetch(url);
@@ -78,17 +78,18 @@ async function fetchRecommendations() {
 
     if (!recommendations || recommendations.length === 0) {
         resultsSection.innerHTML = "<p>No recommendations found for this guideline.</p>";
+        exportButton.style.display = "none";
         return;
     }
 
-    const filtered = recommendations; // filtering now handled by API using `date=`
+    const filtered = recommendations;
 
     if (filtered.length === 0) {
         resultsSection.innerHTML = "<p>No recommendations found for selected date.</p>";
+        exportButton.style.display = "none";
         return;
     }
 
-    // Load sections using fallback strategy
     let sectionMap = {};
     const sectionIdsToTry = [];
     if (guidelineEntry.publishedId) sectionIdsToTry.push(guidelineEntry.publishedId);
@@ -120,17 +121,88 @@ async function fetchRecommendations() {
     const html = filtered.map(rec => {
         const title = sectionMap[String(rec.sectionId)] || "Untitled Section";
         return `
-      <div class="recommendation">
-        <h3>${title}</h3>
-        <p>${rec.text || "(No text available)"}</p>
-        <small>Last updated: ${rec.lastUpdated || "unknown"}</small>
-      </div>
-      <hr />
-    `;
+          <div class="recommendation">
+            <h3>${title}</h3>
+            <p>${rec.text || "(No text available)"}</p>
+            <small>Last updated: ${rec.lastUpdated || "unknown"}</small>
+          </div>
+          <hr />
+        `;
     });
 
     resultsSection.innerHTML = html.join("");
+    exportButton.style.display = "inline-block";
 }
+
+const exportButton = document.getElementById("export-pdf-button");
+
+exportButton.addEventListener("click", async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "pt", "a4");
+    const content = document.getElementById("pdf-export-container");
+
+    const selectedOption = guidelineSelect.options[guidelineSelect.selectedIndex];
+    const title = selectedOption?.textContent || "Guideline Summary";
+
+    try {
+        // Remove all images first to avoid CORS issues
+        document.querySelectorAll("#results img").forEach(img => {
+            console.log("🧹 Skipping image from PDF:", img);
+            img.remove();
+        });
+
+        // Render content as canvas
+        const canvas = await html2canvas(content, {
+            scale: 2,
+            useCORS: true,
+            removeContainer: true,
+            windowWidth: content.scrollWidth,
+            ignoreElements: (el) => el.tagName === "IMG"
+        });
+
+        if (!canvas || !canvas.toDataURL) throw new Error("Canvas failed to render.");
+
+        const imgData = canvas.toDataURL("image/png");
+        if (!imgData.startsWith("data:image/png;base64,")) {
+            throw new Error("Canvas produced invalid image data.");
+        }
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 40;
+
+        // ✨ Title wrapping logic
+        const maxTitleWidth = pageWidth - 2 * margin;
+        const titleLines = doc.splitTextToSize(title, maxTitleWidth);
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text(titleLines, margin, margin);
+
+        const titleHeight = titleLines.length * 24;
+        let y = margin + titleHeight + 20;
+
+        // Calculate dimensions for image placement
+        const imgWidth = pageWidth - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let remainingHeight = imgHeight;
+        const imgHeightRatio = canvas.height / canvas.width;
+        let position = y;
+
+        while (remainingHeight > 0) {
+            doc.addImage(imgData, "PNG", margin, position, imgWidth, imgWidth * imgHeightRatio);
+            remainingHeight -= pageHeight - position;
+            if (remainingHeight > 0) {
+                doc.addPage();
+                position = margin;
+            }
+        }
+
+        doc.save(`${title.replace(/[^a-z0-9]+/gi, "_").toLowerCase()}.pdf`);
+    } catch (error) {
+        console.error("PDF export failed:", error);
+        alert("Oops! Something went wrong while generating the PDF.\n\nTry with fewer results or refresh the page and try again.");
+    }
+});
 
 // Init
 loadGuidelines();

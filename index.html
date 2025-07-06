@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>MAGICapp Guideline Summariser</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <main>
@@ -19,8 +21,11 @@
     <input type="date" id="date-input" />
 
     <button id="fetch-button">Generate Summary</button>
+    <button id="export-pdf-button" style="margin-top: 1em; display: none;">Download as PDF</button>
 
-    <section id="results"></section>
+    <div id="pdf-export-container">
+        <div id="results">...</div>
+    </div>
 </main>
 
 <script src="script.js"></script>
