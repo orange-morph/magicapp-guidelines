@@ -13,9 +13,10 @@ function parseSnapshotDate(input) {
 
 async function loadGuidelines() {
     try {
-        const url = `https://api.magicapp.org/api/v2/content/guidelines?limit=1000` +
+        const rawUrl = `https://api.magicapp.org/api/v2/content/guidelines?limit=1000` +
             `&pubAfter=2000-01-01&pubBefore=2030-01-01` +
             `&createAfter=2000-01-01&createBefore=2050-01-01`;
+        const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Failed to load guidelines: HTTP ${res.status}`);
@@ -61,7 +62,8 @@ async function fetchRecommendations() {
 
     for (let id of tryIds) {
         try {
-            let url = `https://api.magicapp.org/api/v2/guidelines/${id}/recommendations`;
+            let rawUrl = `https://api.magicapp.org/api/v2/guidelines/${id}/recommendations`;
+            const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
             if (snapshotDate) {
                 url += `?date=${snapshotDate}`;
             }
@@ -97,7 +99,11 @@ async function fetchRecommendations() {
 
     for (let id of sectionIdsToTry) {
         try {
-            const res = await fetch(`https://api.magicapp.org/api/v1/guidelines/${id}/sections`);
+
+            const rawUrl = `https://api.magicapp.org/api/v1/guidelines/${id}/sections`;
+            const url = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+
+            const res = await fetch(url);
             if (res.ok) {
                 const sections = await res.json();
                 sectionMap = Object.fromEntries(
