@@ -84,7 +84,16 @@ async function fetchRecommendations() {
         return;
     }
 
-    const filtered = recommendations;
+    // Apply strength filtering (ignore 'INFO' recommendations)
+    const strengthFiltered = recommendations.filter(rec => rec.strength !== 'INFO');
+
+    // Check if all remaining recs have 'NOTSET' strength
+    const allAreNotSet = strengthFiltered.every(rec => rec.strength === 'NOTSET');
+
+    // If all are 'NOTSET', show them anyway — otherwise, filter those out too
+    const filtered = allAreNotSet
+        ? strengthFiltered
+        : strengthFiltered.filter(rec => rec.strength !== 'NOTSET');
 
     if (filtered.length === 0) {
         resultsSection.innerHTML = "<p>No recommendations found for selected date.</p>";
