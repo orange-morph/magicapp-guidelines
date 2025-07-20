@@ -133,16 +133,41 @@ async function fetchRecommendations() {
         }
     }
 
+    const strengthMap = {
+        'CONSENSUS': 'Consensus recommendation',
+        'PRACTICE': 'Good practice statement',
+        'STRONG': 'Recommended',
+        'STRONG_AGAINST': 'Not recommended',
+        'WEAK': 'Conditional recommendation',
+        'WEAK_AGAINST': 'Conditional recommendation against',
+        'RESEARCH_STATEMENT': 'Implications for research',
+        'ONLY_IN_RESEARCH': 'Only in research settings'
+    };
+
+    const statusMap = {
+        'NEW': 'New',
+        'UPDATED': 'Updated',
+        'UNDER_REVIEW': 'In review',
+        'NEW_EVIDENCE': 'Updated evidence, no change in recommendation',
+        'REVIEWED_NO_NEW': 'Reviewed, no new evidence',
+        'NOTSET': ''
+    };
+
     const html = filtered.map(rec => {
         const title = sectionMap[String(rec.sectionId)] || "Untitled Section";
+        const strengthLabel = strengthMap[rec.strength] || '';
+        const statusLabel = statusMap[rec.status] || '';
+        console.log(rec);
+
         return `
-          <div class="recommendation">
-            <h3>${title}</h3>
-            <p>${rec.text || "(No text available)"}</p>
-            <small>Last updated: ${rec.lastUpdated || "unknown"}</small>
-          </div>
-          <hr />
-        `;
+      <div class="recommendation">
+        <h3>${title}</h3>
+        <p>${rec.text || "(No text available)"}</p>
+        ${strengthLabel ? `<div><strong>Strength:</strong> ${strengthLabel}</div>` : ""}
+        ${statusLabel ? `<div><strong>Status:</strong> ${statusLabel}</div>` : ""}
+      </div>
+      <hr />
+    `;
     });
 
     resultsSection.innerHTML = html.join("");
