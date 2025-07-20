@@ -41,6 +41,23 @@ button:hover {
     background-color: #155b82;
 }
 
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 0.15em solid #ccc;
+    border-top: 0.15em solid #3498db; /* blue highlight */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-left: 0.5em;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 #results {
     margin-top: 2rem;
     padding: 1rem;

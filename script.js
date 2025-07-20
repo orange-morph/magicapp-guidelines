@@ -56,7 +56,10 @@ async function fetchRecommendations() {
     if (guidelineEntry.publishedId) tryIds.push(guidelineEntry.publishedId);
     if (!tryIds.includes(guidelineEntry.guidelineId)) tryIds.push(guidelineEntry.guidelineId);
 
-    resultsSection.innerHTML = `<em>Loading recommendations...</em>`;
+    resultsSection.innerHTML = `
+      <em>Loading recommendations...<span class="spinner" aria-label="Loading spinner"></span></em>
+    `;
+
 
     let recommendations = null;
 
@@ -157,7 +160,6 @@ async function fetchRecommendations() {
         const title = sectionMap[String(rec.sectionId)] || "Untitled Section";
         const strengthLabel = strengthMap[rec.strength] || '';
         const statusLabel = statusMap[rec.status] || '';
-        console.log(rec);
 
         return `
       <div class="recommendation">
